@@ -73,6 +73,10 @@ def _validate_file(yaml_path, schema_name, parser, strict, should_exclude):
         raise ValueError("Invalid schema name for '{}' or schema not found.".format(schema_name))
     _validate(s, yaml_path, parser, strict, True)
 
+#Checks if something is a YAML file
+def _a_yaml_file(f, schema_name):
+    is_yaml_file = f.endswith(".yaml") or f.endswith(".yml")
+    return is_yaml_file and f != schema_name
 
 def _validate_dir(root, schema_name, cpus, parser, strict, should_exclude):
     pool = multiprocessing.Pool(processes=cpus)
@@ -80,7 +84,7 @@ def _validate_dir(root, schema_name, cpus, parser, strict, should_exclude):
     error_messages = []
     for root, _, files in os.walk(root):
         for f in files:
-            if (f.endswith(".yaml") or f.endswith(".yml")) and f != schema_name:
+            if _a_yaml_file(f, schema_name):
                 yaml_path = os.path.join(root, f)
                 if should_exclude(yaml_path):
                     continue
