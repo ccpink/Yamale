@@ -78,6 +78,14 @@ def _a_yaml_file(f, schema_name):
     is_yaml_file = f.endswith(".yaml") or f.endswith(".yml")
     return is_yaml_file and f != schema_name
 
+#Finds errors messages in the res
+def _find_errors(res):
+    error_msgs = []
+    for r in res:
+        sub_results = r.get(timeout=300)
+        error_msgs.extend([str(sub_result) for sub_result in sub_results if not sub_result.isValid()])
+    return 
+
 def _validate_dir(root_dir, schema_name, cpus, parser, strict, should_exclude):
     pool = multiprocessing.Pool(processes=cpus)
     res = []
@@ -95,9 +103,7 @@ def _validate_dir(root_dir, schema_name, cpus, parser, strict, should_exclude):
                     print(f"No schema found for: {yaml_path}")
 
     print(f"Found {len(res)} yaml files to validate...")
-    for r in res:
-        sub_results = r.get(timeout=300)
-        error_messages.extend([str(sub_result) for sub_result in sub_results if not sub_result.isValid()])
+    error_messages = _find_errors(res)
     pool.close()
     pool.join()
     if error_messages:
