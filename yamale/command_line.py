@@ -78,14 +78,14 @@ def _a_yaml_file(f, schema_name):
     is_yaml_file = f.endswith(".yaml") or f.endswith(".yml")
     return is_yaml_file and f != schema_name
 
-def _validate_dir(root, schema_name, cpus, parser, strict, should_exclude):
+def _validate_dir(root_dir, schema_name, cpus, parser, strict, should_exclude):
     pool = multiprocessing.Pool(processes=cpus)
     res = []
     error_messages = []
-    for root, _, files in os.walk(root):
+    for root_dir, _, files in os.walk(root_dir):
         for f in files:
             if _a_yaml_file(f, schema_name):
-                yaml_path = os.path.join(root, f)
+                yaml_path = os.path.join(root_dir, f)
                 if should_exclude(yaml_path):
                     continue
                 schema_path = _find_schema(yaml_path, schema_name)
