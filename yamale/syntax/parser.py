@@ -5,6 +5,17 @@ from .. import validators as val
 safe_globals = ("True", "False", "None")
 safe_builtins = dict((f, __builtins__[f]) for f in safe_globals)
 
+def _validate_arg(arg, validators):
+    base_arg = arg.operand if isinstance(arg, ast.UnaryOp) else arg
+    if isinstance(base_arg, ast.Constant):
+        return
+    elif isinstance(base_arg, ast.Name) and base_arg.id in validators:
+        return
+    elif isinstance(base_arg, ast.Call):
+        _validate_expr(base_arg, validators)
+    else:
+        raise SyntaxError("Argument values must either be constant literals, or else " "reference other validators.")
+
 
 def _validate_expr(call_node, validators):
     # Validate that the expression uses a known, registered validator.
@@ -17,16 +28,7 @@ def _validate_expr(call_node, validators):
     # Validate that all args are constant literals, validator names, or other call nodes
     arg_values = call_node.args + [kw.value for kw in call_node.keywords]
     for arg in arg_values:
-        base_arg = arg.operand if isinstance(arg, ast.UnaryOp) else arg
-        if isinstance(base_arg, ast.Constant):
-            continue
-        elif isinstance(base_arg, ast.Name) and base_arg.id in validators:
-            continue
-        elif isinstance(base_arg, ast.Call):
-            _validate_expr(base_arg, validators)
-        else:
-            raise SyntaxError("Argument values must either be constant literals, or else " "reference other validators.")
-
+        _validate_arg(arg, validators)
 
 def parse(validator_string, validators=None):
     validators = validators or val.DefaultValidators
