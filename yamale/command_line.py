@@ -78,32 +78,32 @@ def _a_yaml_file(f, schema_name):
     is_yaml_file = f.endswith(".yaml") or f.endswith(".yml")
     return is_yaml_file and f != schema_name
 
-#Finds errors messages in the res
-def _find_errors(res):
+#Finds errors messages in the tasks
+def _find_errors(async_tasks):
     error_msgs = []
-    for r in res:
-        sub_results = r.get(timeout=300)
+    for task in async_tasks:
+        sub_results = task.get(timeout=300)
         error_msgs.extend([str(sub_result) for sub_result in sub_results if not sub_result.isValid()])
     return 
 
 def _validate_dir(root_dir, schema_name, cpus, parser, strict, should_exclude):
     pool = multiprocessing.Pool(processes=cpus)
-    res = []
+    async_tasks= []
     error_messages = []
     for root_dir, _, files in os.walk(root_dir):
-        for f in files:
-            if _a_yaml_file(f, schema_name):
-                yaml_path = os.path.join(root_dir, f)
+        for filename in files:
+            if _a_yaml_file(filename, schema_name):
+                yaml_path = os.path.join(root_dir, filename)
                 if should_exclude(yaml_path):
                     continue
                 schema_path = _find_schema(yaml_path, schema_name)
                 if schema_path:
-                    res.append(pool.apply_async(_validate, (schema_path, yaml_path, parser, strict, False)))
+                    async_tasks.append(pool.apply_async(_validate, (schema_path, yaml_path, parser, strict, False)))
                 else:
                     print(f"No schema found for: {yaml_path}")
 
-    print(f"Found {len(res)} yaml files to validate...")
-    error_messages = _find_errors(res)
+    print(f"Found {len(async_tasks)} yaml files to validate...")
+    error_messages = _find_errors(async_tasks)
     pool.close()
     pool.join()
     if error_messages:
